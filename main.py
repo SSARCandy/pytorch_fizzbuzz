@@ -6,8 +6,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 BATCH = 32
-DIGITS = 11
+DIGITS = 13
 EPOCH = 300
+DATASET_SIZE = 3000
 CLASSES = ['FizzBuzz', 'Fizz', 'Buzz', '']
 
 CUDA = torch.cuda.is_available()
@@ -127,27 +128,30 @@ def interactive_test(model):
 
 
 if __name__ == '__main__':
+    print('[INFO] Using {} for training.'.format('GPU' if CUDA else 'CPU'))
+
     m = FizzBuzz(DIGITS, 4)
     if CUDA:
         m = m.cuda()
 
     optimizer = optim.SGD(m.parameters(), lr=0.02, momentum=0.9)
 
-    print('Making dataset...')
-    training_data = make_data(2000, BATCH)
+    print('[INFO] Generating {} training datas'.format(DATASET_SIZE))
+    training_data = make_data(DATASET_SIZE, BATCH)
     testing_data = make_data(100, BATCH)
 
-    print('Training...')
+    print('==== Start Training ====')
     for epoch in range(1, EPOCH + 1):
         training(m, optimizer, training_data)
         res = testing(m, testing_data)
-        print('Epoch {}, Loss: {:.5f}, Accuracy: {:.2f}%'.format(
+        print('Epoch {}/{}, Loss: {:.5f}, Accuracy: {:.2f}%'.format(
                 epoch,
+                EPOCH,
                 res['avg_loss'],
                 res['accuracy'],
-            ))
+            ), end='\r')
 
-    print('Inertactive test...')
-    print('Enter a digit smaller than {}. ("q" to quit)'.format(2**DIGITS))
+    print('\n==== Inertactive Test ====')
+    print('[INFO] Enter a digit smaller than {}. ("q" to quit)'.format(2**DIGITS))
     interactive_test(m)
 
