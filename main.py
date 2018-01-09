@@ -46,16 +46,16 @@ def encoder(num):
     return list(map(lambda x: int(x), ('{:0' + str(DIGITS) + 'b}').format(num))) 
 
 
-def make_data(range_, batch_size):
-    min, max = range_
+def make_data(num_of_data, batch_size):
     xs = []
     ys = []
-    for x in range(min, max):
+    for _ in range(num_of_data):
+        x = random.randint(0, 2**DIGITS-1)
         xs += [encoder(x)]
         ys += [fizz_buzz(x)]
 
     data = []
-    for b in range((max-min)//batch_size):
+    for b in range(num_of_data//batch_size):
         xxs = xs[b*batch_size:(b+1)*batch_size]
         yys = ys[b*batch_size:(b+1)*batch_size]
         data += [(xxs, yys)]
@@ -70,6 +70,8 @@ def training(model, optimizer, training_data):
         data = Variable(torch.FloatTensor(data))
         label = Variable(torch.LongTensor(label))
 
+        # print(data)
+        # print()
         if CUDA:
             data, label = data.cuda(), label.cuda()
 
@@ -111,11 +113,12 @@ def interactive_test(model):
         if num == 'q':
             print('Bye~')
             return
-        else:
-            num = int(num)
+        if int(num) >= 2**DIGITS:
+            print('Please enter number smaller than {}'.format(2**DIGITS))
+            continue
 
-        ans = fizz_buzz(num)
-        x = Variable(torch.FloatTensor([encoder(num)]))
+        ans = fizz_buzz(int(num))
+        x = Variable(torch.FloatTensor([encoder(int(num))]))
         if CUDA:
             x = x.cuda()
 
@@ -131,20 +134,20 @@ if __name__ == '__main__':
     optimizer = optim.SGD(m.parameters(), lr=0.02, momentum=0.9)
 
     print('Making dataset...')
-    training_data = make_data((0, 2000), BATCH)
-    testing_data = make_data((1000, 2000), BATCH)
+    training_data = make_data(2000, BATCH)
+    testing_data = make_data(100, BATCH)
 
     print('Training...')
     for epoch in range(1, EPOCH + 1):
         training(m, optimizer, training_data)
         res = testing(m, testing_data)
-        print('Epoch {}, Loss: {:.5f}, Accuracy: {:.4f}%'.format(
+        print('Epoch {}, Loss: {:.5f}, Accuracy: {:.2f}%'.format(
                 epoch,
                 res['avg_loss'],
                 res['accuracy'],
             ))
 
     print('Inertactive test...')
-    print('Enter a digit smaller than 2^{}. ("q" to quit)'.format(DIGITS))
+    print('Enter a digit smaller than {}. ("q" to quit)'.format(2**DIGITS))
     interactive_test(m)
 
